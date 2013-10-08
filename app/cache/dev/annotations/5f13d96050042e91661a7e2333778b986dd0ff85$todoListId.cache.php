@@ -1,0 +1,1 @@
+<?php return unserialize('a:1:{i:0;O:30:"JMS\\Serializer\\Annotation\\Type":1:{s:4:"name";s:7:"integer";}}');

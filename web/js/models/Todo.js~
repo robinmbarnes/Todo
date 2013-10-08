@@ -1,0 +1,177 @@
+$(function() {
+    
+   TodoList = Backbone.Model.extend({
+       urlRoot: '/app_dev.php/todoLists',
+       initialize: function() {
+       }
+   });
+
+	TodoListsCollection = Backbone.Collection.extend({
+		model: TodoList,
+		comparator: false,
+		initialize: function() {
+	
+		}
+	});
+   
+   Item = Backbone.Model.extend({
+        initialize: function() {
+        }
+    });
+    
+   ItemCollection = Backbone.Collection.extend({
+        model: Item,
+        comparator: false
+    });
+
+    ItemView = Backbone.View.extend({
+        initialize: function() {
+        },
+        tagName: 'li',
+        render: function() {
+            this.$el.append(_.template($("#item-template").html(), {
+                name: this.model.get('name'),
+                is_done: this.model.get('is_done')
+            }));
+            return this;
+        },
+        events: {
+            'change input': 'checkboxChanged'
+        },
+        checkboxChanged: function() {
+            this.model.set('is_done', !this.model.get('is_done'));
+            this.model.save(null);
+        }
+    });
+     
+    
+    TodoListView = Backbone.View.extend({
+        el: $('#overlay'),
+            initialize: function(){
+                this.$listEl = null;
+                this.itemViews = [];
+                this.scrollDistance = 18;
+                this.scrollUpTimer = null;
+                this.scrollDownTimer = null;
+                this.itemsUrlRoot = '/app_dev.php/todoLists/'+this.model.get('id')+'/items';
+                this.collection = new ItemCollection(this.model.get('items'), {
+                    urlRoot: this.itemsUrlRoot
+                });
+                var that = this;
+                this.collection.each(function(model) {
+                    that.itemViews.push(new ItemView({model: model}));
+                });
+            },
+            render: function() {
+                var html = _.template($("#todoList-template").html(), {
+                    name: this.model.get('name')
+                });
+                
+                this.$el.append(html);
+                this.$listEl = this.$el.find('ul:first');
+                var that = this;
+                _.each(this.itemViews, function(itemView) {
+                    that.$listEl.append(itemView.render().el);					
+                });
+                return this;
+            },
+            events : {
+                'click #btn-add' : 'addItem',
+                'click #btn-save' : 'saveItem',
+                'click #btn-cancel' : 'cancelAddItem',
+                'click #btn-up' : 'scrollUp',
+                'click #btn-down' : 'scrollDown',
+            },
+            addItem: function() {
+                if(!this.$el.find('#add-item').length)
+                {
+                    this.$listEl.append(_.template($("#add-item-template").html()));
+                }
+                this.scrollToBottom();
+                return false;
+            },
+            saveItem: function() {
+                this.$el.find('.error').remove();
+                var item = new Item({name: $('#new-item').val(), is_done: false});
+                item.urlRoot = this.itemsUrlRoot;
+                var that = this;
+                item.save(null, {
+                    success: function() {
+                        that.collection.add(item);
+                        var itemView = new ItemView({model: item});
+                        that.itemViews.push(itemView);
+                        that.$el.find('#add-item').remove();
+                        that.$listEl.append(itemView.render().el);
+                    }, error: function(model, xhr, options) {
+                        var errorMessage = $.parseJSON(xhr.responseText).user_message;
+                        var error = $('<div class="error"><strong>Error</strong>'+errorMessage+'</div>')
+                            .css('top', ($('#add-item').offset().top - 45) + 'px');
+                        that.$el.prepend(error);
+                    }
+                });
+            },
+            cancelAddItem: function() {
+                this.$el.find('#add-item').remove();
+                this.$el.find('.error').remove();
+                return false;                
+            },
+            scrollUp: function() {
+                var firstItem = this.$listEl.children('li:first');
+                var distanceAlreadyScrolled = parseInt(firstItem.css('margin-top').replace('px', ''));
+                var that = this;
+                if(distanceAlreadyScrolled == 0)
+                {
+                    return false;
+                }
+                firstItem.css('margin-top', distanceAlreadyScrolled + that.scrollDistance);
+                return false;
+            },
+            scrollDown: function() {
+                var firstItem = this.$listEl.children('li:first');
+                var viewableHeight = this.$listEl.height();
+                var distanceAlreadyScrolled = Math.abs(parseInt(firstItem.css('margin-top').replace('px', '')));
+                var totalLiHeight = 0;
+                var that = this;
+                this.$listEl.children('li').each(function() {
+                    totalLiHeight += $(this).outerHeight();
+                    if(totalLiHeight > (viewableHeight + distanceAlreadyScrolled))
+                    {
+                        firstItem.css('margin-top', ((0 - distanceAlreadyScrolled) - that.scrollDistance) + 'px');
+                        return false;
+                    }
+                });
+                return false;
+            },
+            scrollToBottom: function() {
+                var totalHeight = 0;
+                this.$listEl.children('li').each(function() {
+                    totalHeight += $(this).outerHeight();
+                });
+                var difference = totalHeight - this.$listEl.height();
+                if(difference > 0)
+                {
+                    this.$listEl.children('li:first').css('margin-top', (0 - difference) + 'px');
+                }
+            }
+    });
+
+    AppView = Backbone.View.extend({
+        el: $('#notepad'),
+        initialize: function(options) {
+            this.todoListView = options.todoListView;
+        },
+        render: function() {
+            this.todoListView.render();
+            return this;
+        }
+    });
+    
+    var todoList = new TodoList({id: 1});
+    todoList.fetch({success: function() {
+        var app = new AppView({
+            todoListView: new TodoListView({model:todoList})
+        });
+        app.render();    
+    }});
+        
+});

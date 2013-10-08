@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>Todo</title>
+    <link  rel="stylesheet/less" href="/css/master.less" type="text/css" media="all" />
+    <script src="/js/less.js" type="text/javascript"></script>
+		<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Gochi+Hand">
+    <script src="/js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/js/underscore.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/js/json2.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/js/backbone.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/js/models/Todo.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+		<div id="notepad">
+                    <div id="overlay">
+                    	<div id="lists-button"><a href="#">All lists</a></div>
+                    </div>
+		</div>
+
+		<!--Templates -->
+                
+                <script type="text/template" id="todoList-template">
+                    <h1><%- name %> <a href="#" id="btn-add">Add item</a></h1>
+                    <div id="list-wrapper">
+                        <ul>
+
+                        </ul>
+                        <div id="paging">
+                            <a href="#" id="btn-up"></a>
+                            <a href="#" id="btn-down"></a>
+                        </div>
+                    </div>
+		</script>
+                
+                <script type="text/template" id="add-item-template">
+                    <li id="add-item">
+                            <div></div>
+                            <div>
+                                <input type="text" id="new-item" />
+                                <a href="#" class="btn" id="btn-save">Save</a>
+                                <a href="#" class="btn" id="btn-cancel">Cancel</a>
+                            </div>	
+                    </li>
+		</script>
+
+		<script type="text/template" id="item-template">
+                    <div><input class="cb" type="checkbox" <% (is_done ? print('checked') : print('')); %>/></div>
+                    <div><%- name %></div>	
+		</script>
+
+		<!--/Templates -->
+
+  </body>
+</html>
+
